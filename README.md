@@ -4,4 +4,12 @@ Python implementation of a Magic: the Gathering card segmentation and recognitio
 General description of the algorithms and several example can be found in my blog:
 https://tmikonen.github.io/quantitatively/2020-01-01-magic-card-detector/
 
+TODO:
+- Expects a folder and not an image name to analize. it will not run any detection
+  if you give it a jpg file name because it appends it to the path you supply.
+- Generate phash for other sets
+- Remove hard-coded paths
+- actually do arg pasring for reference images
+
+
 
