@@ -10,6 +10,9 @@ TODO:
 - Generate phash for other sets
 - Remove hard-coded paths
 - actually do arg pasring for reference images
+- put results.txt into the output folder.
+- figure out what is different between my reference images and the ones used.
+  resolution?
 
 
 
