@@ -544,6 +544,9 @@ class TestImage:
               str(len(recognized_list)) +
               ' cards):')
         for card in recognized_list:
+            text_file = open("results.txt", "a")
+            text_file.write(card.name + '\n')
+            text_file.close()
             print(card.name +
                   '  - with score ' +
                   str(card.recognition_score))
