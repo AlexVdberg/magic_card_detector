@@ -13,6 +13,8 @@ TODO:
 - put results.txt into the output folder.
 - figure out what is different between my reference images and the ones used.
   resolution?
+- remove path reuiqrement from MagicCardDetector. It is not used by
+  `save_hash.py`.
 
 
 
