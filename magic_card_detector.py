@@ -534,6 +534,7 @@ class TestImage:
                     '.jpg', dpi=600)
         if visual:
             plt.show()
+        plt.close()
 
     def print_recognized(self):
         """
@@ -544,9 +545,6 @@ class TestImage:
               str(len(recognized_list)) +
               ' cards):')
         for card in recognized_list:
-            text_file = open("results.txt", "a")
-            text_file.write(card.name + '\n')
-            text_file.close()
             print(card.name +
                   '  - with score ' +
                   str(card.recognition_score))
@@ -654,7 +652,7 @@ class MagicCardDetector:
         maxsize = 1000
         print('Reading images from ' + str(path))
         print('...', end=' ')
-        filenames = glob.glob(path.rstrip('/') + '/*.jpg')
+        filenames = sorted(glob.glob(path.rstrip('/') + '/*.jpg'))
         for filename in filenames:
             img = cv2.imread(filename)
             if min(img.shape[0], img.shape[1]) > maxsize:
@@ -769,6 +767,14 @@ class MagicCardDetector:
                 # this can occur in Shapely for some funny contour shapes
                 # resolve by discarding the candidate
                 print(nie)
+                (continue_segmentation,
+                 is_card_candidate,
+                 bounding_poly,
+                 crop_factor) = (True, False, None, 1.)
+            except ValueError as ve:
+                # this can occur if the contour is out of bounds
+                # resolve by discarding the candidate
+                print(ve)
                 (continue_segmentation,
                  is_card_candidate,
                  bounding_poly,
@@ -978,6 +984,8 @@ def main():
 
     card_detector.run_recognition()
 
+
+
     if do_profile:
         # Stop profiling and organize and print profiling results.
         profiler.disable()
@@ -988,6 +996,19 @@ def main():
             profiler, stream=profiler_stream).sort_stats(sortby)
         profiler_stats.print_stats(20)
         print(profiler_stream.getvalue())
+
+    # Print out cards found into csv
+    text_file = open("results.txt", "a")
+    print("Found Cards:")
+    for test_image in card_detector.test_images:
+        print(test_image.name, end = ',')
+        text_file.write(test_image.name + ',')
+        for card in test_image.return_recognized():
+            print(card.name, end = ',')
+            text_file.write(card.name + ',')
+        print()
+        text_file.write('\n')
+    text_file.close()
 
 
 if __name__ == "__main__":
