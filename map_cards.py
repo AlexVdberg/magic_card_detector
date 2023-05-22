@@ -1,5 +1,6 @@
 import csv
 import argparse
+import os
 
 def main():
     """
@@ -11,35 +12,51 @@ def main():
         description='Map output from magic_card_detector.py into collector' +
                      'number.')
 
-    parser.add_argument('set_list',
+    parser.add_argument('set_name',
+                        help='3 or 4 letter set acrynm in CAPS')
+    parser.add_argument('set_list_path',
                         help='path containing the map')
-    parser.add_argument('input_cards',
-                        help='path containing the images to be mapped')
+    parser.add_argument('input_path',
+                        help='path containing the images to be analyzed')
+    parser.add_argument('output_path',
+                        help='path to print mapped results')
+    parser.add_argument('--debug', default=False, action='store_true',
+                        help='run in verbose debug mode')
 
     args = parser.parse_args()
 
-    set_list_filename = args.set_list;
-    input_cards_filename = args.input_cards;
+    set_name = args.set_name
+
+    set_list_filename = os.path.join(args.set_list_path, set_name + ".csv");
+    input_cards_filename = os.path.join(args.input_path, set_name, "cards_" + set_name + ".csv");
+    output_cards_filename = os.path.join(args.output_path, set_name + ".csv");
+
+    if not os.path.exists(args.output_path):
+        os.mkdir(args.output_path)
 
     set_list = []
-    with open(set_list_filename) as f:
-        reader = csv.reader(f, delimiter=';')
+    with open(set_list_filename) as set_list_file:
+        reader = csv.reader(set_list_file, delimiter=';')
         set_list = dict(reader)
-        print(set_list)
+        if (args.debug):
+            print("Set list read from: " + set_list_filename)
+            print(set_list)
 
-    f = open("testfile.csv", "w")
-    f2 = open("testfile2.csv", "w")
+    f = open(output_cards_filename, "w")
     with open(input_cards_filename) as input_cards_file:
         reader = csv.reader(input_cards_file, delimiter=';')
+        if (args.debug):
+            print("Detected cards read from: " + input_cards_filename)
         for card in reader:
-            f.write(card[0] + ";" + set_list[card[0]] + "\n")
-            f2.write("CMR;" + set_list[card[0]] + "\n")
+            if (args.debug):
+                print(card)
+            if (card[0] == ''):
+                print("Card detection missing in " + input_cards_filename)
+            else:
+                f.write(card[1] + ";" + set_list[card[0]] + "\n")
 
-        input_cards = dict(reader)
-        print(input_cards)
 
     f.close()
-    f2.close()
 
 
 

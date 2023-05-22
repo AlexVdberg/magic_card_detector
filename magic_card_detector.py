@@ -944,12 +944,16 @@ def main():
         description='Recognize Magic: the Gathering cards from an image. ' +
                      'Author: Timo Ikonen, timo.ikonen(at)iki.fi')
 
+    parser.add_argument('set_name',
+                        help='3 or 4 letter set acrynm in CAPS')
     parser.add_argument('input_path',
                         help='path containing the images to be analyzed')
     parser.add_argument('output_path',
                         help='output path for the results')
-    parser.add_argument('--phash', default='alpha_reference_phash.dat',
-                        help='pre-calculated phash reference file')
+    parser.add_argument('phash_path',
+                        help='pre-calculated phash reference file path')
+    parser.add_argument('--phash_filename',
+                        help='pre-calculated phash reference filename')
     parser.add_argument('--visual', default=False, action='store_true',
                         help='run with visualization')
     parser.add_argument('--verbose', default=False, action='store_true',
@@ -957,10 +961,23 @@ def main():
 
     args = parser.parse_args()
 
+    set_name = args.set_name
+
     # Create the output path
     output_path = args.output_path.rstrip('/')
+#    output_path = os.path.join(output_path, set_name)
     if not os.path.exists(output_path):
         os.mkdir(output_path)
+
+#    input_path = os.path.join(args.input_path, set_name)
+    input_path = args.input_path
+    if (args.phash_filename):
+        phash = args.phash_filename
+    elif (args.phash_path):
+        phash = os.path.join(args.phash_path, set_name + ".dat")
+    else:
+        print("Must provide a phash filename or path")
+        exit()
 
     # Instantiate the detector
     card_detector = MagicCardDetector(output_path)
@@ -972,8 +989,8 @@ def main():
     # Read the reference and test data sets
     # card_detector.read_and_adjust_reference_images(
     #     '../../MTG/Card_Images/LEA/')
-    card_detector.read_prehashed_reference_data(args.phash)
-    card_detector.read_and_adjust_test_images(args.input_path)
+    card_detector.read_prehashed_reference_data(phash)
+    card_detector.read_and_adjust_test_images(input_path)
 
     if do_profile:
         # Start up the profiler.
@@ -998,16 +1015,11 @@ def main():
         print(profiler_stream.getvalue())
 
     # Print out cards found into csv
-    text_file = open("results.txt", "w")
-    print("Found Cards:")
+    text_file = open(os.path.join(output_path, "cards_" + set_name + ".csv"), "w")
     for test_image in card_detector.test_images:
         for card in test_image.return_recognized():
-            print(card.name, end = ';')
-            #text_file.write(card.name + ',')
             text_file.write(card.name)
-        print(test_image.name)
-        text_file.write(';' + test_image.name)
-        print()
+        text_file.write(';' + set_name + ';' + test_image.name)
         text_file.write('\n')
     text_file.close()
 
