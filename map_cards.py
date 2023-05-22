@@ -27,17 +27,17 @@ def main():
         set_list = dict(reader)
         print(set_list)
 
-    input_cards = []
-    with open(input_cards_filename) as f:
-        reader = csv.reader(f, delimiter=';')
+    f = open("testfile.csv", "w")
+    f2 = open("testfile2.csv", "w")
+    with open(input_cards_filename) as input_cards_file:
+        reader = csv.reader(input_cards_file, delimiter=';')
+        for card in reader:
+            f.write(card[0] + ";" + set_list[card[0]] + "\n")
+            f2.write("CMR;" + set_list[card[0]] + "\n")
+
         input_cards = dict(reader)
         print(input_cards)
 
-    f = open("testfile.csv", "w")
-    f2 = open("testfile2.csv", "w")
-    for card in input_cards:
-        f.write(card + ";" + input_cards[card] + ";" + set_list[card] + "\n")
-        f2.write("CMR;" + set_list[card] + "\n")
     f.close()
     f2.close()
 
