@@ -998,14 +998,15 @@ def main():
         print(profiler_stream.getvalue())
 
     # Print out cards found into csv
-    text_file = open("results.txt", "a")
+    text_file = open("results.txt", "w")
     print("Found Cards:")
     for test_image in card_detector.test_images:
-        print(test_image.name, end = ',')
-        text_file.write(test_image.name + ',')
         for card in test_image.return_recognized():
-            print(card.name, end = ',')
-            text_file.write(card.name + ',')
+            print(card.name, end = ';')
+            #text_file.write(card.name + ',')
+            text_file.write(card.name)
+        print(test_image.name)
+        text_file.write(';' + test_image.name)
         print()
         text_file.write('\n')
     text_file.close()

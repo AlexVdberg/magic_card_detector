@@ -44,3 +44,19 @@ images are zero padded so that the scripts can read them in the proper order.
 scanimage -d epsonds:libusb:002:004 --format=jpeg --batch=card_%04d.jpg -x 70 -y 90 --batch-start=1
 ```
 
+## Scryfalldler
+Use scryfalldler to get the images for each of the sets.
+I added a patch to also print a mapping from image name to collector number.
+This will get exported to a csv which we will use later to map into the final
+csv for import into card catalogue of choice.
+
+While you can run scryfalldler with parallel, I would advise against it. The API
+documentaion for scryfalldler says they will ban IPs who hammer the server too
+hard and we don't want to annoy them for providing so much to the community.
+
+To only print the csv information, use `-debug` to skip the download part. You
+can run this in parallel, because you arent actually downloading anything here;
+only printing out information.
+```
+ls sets | parallel php scryfalldler -s {} -debug
+```
