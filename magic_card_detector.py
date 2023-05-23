@@ -531,7 +531,7 @@ class TestImage:
 
         plt.savefig(output_path + '/MTG_card_recognition_results_' +
                     str(self.name.split('.jpg')[0]) +
-                    '.jpg', dpi=600)
+                    '.jpg', dpi=600, bbox_inches='tight')
         if visual:
             plt.show()
         plt.close()
@@ -909,6 +909,11 @@ class MagicCardDetector:
             if self.verbose:
                 print(str(i_cand + 1) + " / " +
                       str(len(test_image.candidate_list)))
+
+            # Assume entire card is within origoinal image and ignore larger
+            if (im_seg.shape[1] > test_image.original.shape[1] or
+                    im_seg.shape[0] > test_image.original.shape[0]):
+                continue
 
             # Easy fragment / duplicate detection
             for other_candidate in test_image.candidate_list:
