@@ -351,16 +351,24 @@ def characterize_card_contour(card_contour,
         is_card_candidate = False
         bounding_poly = None
         crop_factor = 1.
+        print("Card size range explored")
     else:
+        print("Possible card")
         continue_segmentation = True
         bounding_poly = get_bounding_quad(phull)
         qc_diff = quad_corner_diff(phull, bounding_poly)
         crop_factor = min(1., (1. - qc_diff * 22. / 100.))
+#        print("bounding_poly.area: " + str(bounding_poly.area) + " qc_diff: " + str(qc_diff) + " polygon_form_factor: " + str(polygon_form_factor(bounding_poly)))
+#        print("bool bounding_poly: " + str(bool( 0.1 * max_segment_area < bounding_poly.area < image_area * 0.99)))
+#        print("bool qc_diff: " + str(bool(qc_diff < 0.35)))
+#        print("bool polygon_form_factor: " + str(bool(0.25 < polygon_form_factor(bounding_poly) < 0.33)))
         is_card_candidate = bool(
             0.1 * max_segment_area < bounding_poly.area <
             image_area * 0.99 and
-            qc_diff < 0.35 and
+            #            qc_diff < 0.35 and
             0.25 < polygon_form_factor(bounding_poly) < 0.33)
+
+    print("is_card_candidate: " + str(is_card_candidate))
 
     return (continue_segmentation,
             is_card_candidate,
@@ -721,6 +729,33 @@ class MagicCardDetector:
             plt.show()
         return contours
 
+    def contour_image_merge(self, full_image):
+        """
+        Merge all contours into one.
+        """
+        # Grayscale
+        gray = cv2.cvtColor(full_image, cv2.COLOR_BGR2GRAY)
+
+        # Find Canny edges
+        edged = cv2.Canny(gray, 100, 200)
+
+        # Finding Contours
+        contours, hierarchy = cv2.findContours(edged, cv2.RETR_EXTERNAL,
+                                               cv2.CHAIN_APPROX_NONE)
+
+        print("Number of Contours before merge = " + str(len(contours)))
+
+        # Merge contours into one
+        list_of_pts = []
+        for ctr in contours:
+            list_of_pts += [pt[0] for pt in ctr]
+        ctr = np.array(list_of_pts).reshape((-1,1,2)).astype(np.int32)
+        contours = ctr
+        contours = [cv2.convexHull(contours)]
+
+        print("Number of Contours after merge = " + str(len(contours)))
+        return contours
+
     def contour_image(self, full_image, mode='gray'):
         """
         Wrapper for selecting the countouring / thresholding algorithm
@@ -739,8 +774,11 @@ class MagicCardDetector:
             contours += self.contour_image_gray(full_image,
                                                 thresholding='adaptive')
             contours += self.contour_image_rgb(full_image)
+        elif mode == 'merge':
+            contours = self.contour_image_merge(full_image)
         else:
             raise ValueError('Unknown segmentation mode.')
+        print("Number of Contours found = " + str(len(contours)))
         contours_sorted = sorted(contours, key=cv2.contourArea, reverse=True)
         return contours_sorted
 
@@ -766,6 +804,7 @@ class MagicCardDetector:
             except NotImplementedError as nie:
                 # this can occur in Shapely for some funny contour shapes
                 # resolve by discarding the candidate
+                print("NotImplementedError")
                 print(nie)
                 (continue_segmentation,
                  is_card_candidate,
@@ -774,6 +813,7 @@ class MagicCardDetector:
             except ValueError as ve:
                 # this can occur if the contour is out of bounds
                 # resolve by discarding the candidate
+                print("ValueError")
                 print(ve)
                 (continue_segmentation,
                  is_card_candidate,
@@ -873,7 +913,8 @@ class MagicCardDetector:
                                         cv2.COLOR_BGR2RGB))
                 plt.show()
 
-            alg_list = ['adaptive', 'rgb']
+            # Algorithms: adaptive, rgp, merge
+            alg_list = ['merge']
 
             for alg in alg_list:
                 self.recognize_cards_in_image(test_image, alg)
