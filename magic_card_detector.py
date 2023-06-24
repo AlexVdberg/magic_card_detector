@@ -392,6 +392,7 @@ class CardCandidate:
     recognition_score: float = 0.
     is_fragment: bool = False
     name: str = 'unknown'
+    rotation: float = 0.
 
     # def __init__(self, im_seg, bquad, fraction):
     #    self.image = im_seg
@@ -458,11 +459,11 @@ class TestImage:
         self.clahe = clahe
         self.adjusted = None
         self.phash = None
-        self.visual = False
+        self.visual: bool = False
         self.histogram_adjust()
         # self.calculate_phash()
 
-        self.candidate_list = []
+        self.candidate_list: list[CardCandidate] = []
 
     def histogram_adjust(self):
         """
@@ -561,7 +562,7 @@ class TestImage:
         """
         Returns a list of recognized and non-fragment card candidates.
         """
-        recognized_list = []
+        recognized_list: list[CardCandidate] = []
         for candidate in self.candidate_list:
             if candidate.is_recognized and not candidate.is_fragment:
                 recognized_list.append(candidate)
@@ -598,8 +599,8 @@ class MagicCardDetector:
     """
 
     def __init__(self, output_path):
-        self.reference_images = []
-        self.test_images = []
+        self.reference_images: list[ReferenceImage] = []
+        self.test_images: list[TestImage] = []
         self.output_path = output_path
 
         self.verbose = False
@@ -615,7 +616,7 @@ class MagicCardDetector:
         """
         Exports the phash and card name of the reference data list.
         """
-        hlist = []
+        hlist: list[ReferenceImage] = []
         for image in self.reference_images:
             hlist.append(ReferenceImage(image.name,
                                         None,
@@ -790,6 +791,7 @@ class MagicCardDetector:
         """
         full_image = test_image.adjusted.copy()
         image_area = full_image.shape[0] * full_image.shape[1]
+        print("full_image Width: " + str(full_image.shape[0]) + " Height: " + str(full_image.shape[1]))
         max_segment_area = 0.01  # largest card area
 
         contours = self.contour_image(full_image, mode=contouring_mode)
@@ -822,6 +824,9 @@ class MagicCardDetector:
             if not continue_segmentation:
                 break
             if is_card_candidate:
+                if self.verbose:
+                    print('max_segment_area=' + str(max_segment_area))
+                    print('bounding_poly.area=' + str(bounding_poly.area))
                 if max_segment_area < 0.1:
                     max_segment_area = bounding_poly.area
                 warped = four_point_transform(full_image,
@@ -857,6 +862,7 @@ class MagicCardDetector:
         card_name = 'unknown'
         is_recognized = False
         recognition_score = 0.
+        recognition_rotation: float = 0.
         rotations = np.array([0., 90., 180., 270.])
 
         d_0_dist = np.zeros(len(rotations))
@@ -885,8 +891,9 @@ class MagicCardDetector:
                     .name.split('.jpg')[0]
                 is_recognized = True
                 recognition_score = d_0_dist[j] / self.hash_separation_thr
+                recognition_rotation = rot
                 break
-        return (is_recognized, recognition_score, card_name)
+        return (is_recognized, recognition_score, card_name, recognition_rotation)
 
     def recognize_segment(self, image_segment):
         """
@@ -905,7 +912,7 @@ class MagicCardDetector:
             image_index = [image_index]
         for i in image_index:
             test_image = self.test_images[i]
-            print('Accessing image ' + test_image.name)
+            print('\nAccessing image ' + test_image.name)
 
             if self.visual:
                 print('Original image')
@@ -955,6 +962,7 @@ class MagicCardDetector:
             if (im_seg.shape[1] > test_image.original.shape[1] or
                     im_seg.shape[0] > test_image.original.shape[0]):
                 continue
+            print("im_seg: Width: " + str(im_seg.shape[0]) + " Height: " + str(im_seg.shape[1]))
 
             # Easy fragment / duplicate detection
             for other_candidate in test_image.candidate_list:
@@ -965,7 +973,8 @@ class MagicCardDetector:
             if not candidate.is_fragment:
                 (candidate.is_recognized,
                  candidate.recognition_score,
-                 candidate.name) = self.recognize_segment(im_seg)
+                 candidate.name,
+                 candidate.rotation) = self.recognize_segment(im_seg)
 
         print('Done. Found ' +
               str(len(test_image.return_recognized())) +
@@ -1064,7 +1073,9 @@ def main():
     text_file = open(os.path.join(output_path, "cards_" + set_name + ".csv"), "w")
     for test_image in card_detector.test_images:
         for card in test_image.return_recognized():
-            text_file.write(card.name)
+            text_file.write(card.name + ';' + str(card.rotation))
+        if (len(test_image.return_recognized()) < 1):
+            text_file.write(";")
         text_file.write(';' + set_name + ';' + test_image.name)
         text_file.write('\n')
     text_file.close()
